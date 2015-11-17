@@ -1,0 +1,39 @@
+[0] ST D8 CK D5 S8  > CK
+[1] ST D8 D9 D5 S8  > ST
+[2] H6 D8 D9 D5 S8  > H6
+[3] SQ D8 D9 D5 S8  > D9
+[4] SQ D8 HJ D5 S8  > HJ
+[5] SQ D8 H3 D5 S8  > D8
+[6] SQ S5 H3 D5 S8  > SQ
+[7] D4 S5 H3 D5 S8 
+テイク素点 :    1
+テイク得点 :   0.00
+[0] HT CJ CT DQ C4  > HT
+[1] SK CJ CT DQ C4  > SK
+[2] C2 CJ CT DQ C4  > C2
+[3] D7 CJ CT DQ C4 
+テイク素点 :    0
+テイク得点 :   0.00
+[0] S2 H5 S3 S9 H9  > S2
+[1] D2 H5 S3 S9 H9  > D2
+[2] HQ H5 S3 S9 H9  > HQ
+[3] S7 H5 S3 S9 H9  > S7
+[4] D1 H5 S3 S9 H9  > D1
+[5] C7 H5 S3 S9 H9  > C7
+[6] H4 H5 S3 S9 H9  > H4
+[7] C6 H5 S3 S9 H9 
+テイク素点 :    1
+テイク得点 :   0.00
+[0] DJ H7 H1 S6 HK  > DJ
+[1] H8 H7 H1 S6 HK  > S6
+[2] H8 H7 H1 DK HK  > DK
+[3] H8 H7 H1 S1 HK  > S1
+[4] H8 H7 H1 D6 HK  > D6
+[5] H8 H7 H1 C9 HK  > C9
+[6] H8 H7 H1 H2 HK 
+テイク素点 :   24
+テイク得点 :   0.00
+[0] C8 C1 D3 C3 SJ 
+テイク素点 :    1
+テイク得点 :   0.00
+トライ得点 :  40.00
