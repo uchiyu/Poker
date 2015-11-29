@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "Poker.h"
+#include "../../src/Poker.h"
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -60,42 +60,6 @@ ud : 捨札配列(過去のテイクも含めた全ての捨札)
 us : 捨札数
 
 --------------------------------------------------------------------*/
-
-int strategy( int hd[], int fd[], int cg, int tk, int ud[], int us) {
-  int myhd[HNUM];
-  int select = -1;
-  int point;
-
-  int i;
-
-
-  //高い役の時終了
-  point = poker_point( hd ); //手札の点数
-  if ( point == P9 ) { return -1; } //ロイヤルストレートフラッシュ
-  if ( point == P8 ) { return -1; } //ストレートフラッシュ
-  if ( point == P7 ) { return -1; } //フォーカード
-  if ( point == P5 ) { return -1; } //フラッシュ
-  if ( point == P6 ) { return -1; } //フルハウス
-  if ( point == P4 ) { return -1; } //ストレート
-
-  //フラッシュ     
-  select = flash_judge( hd );
-
-  if ( select != -1 ) {
-    return select;
-  }
-
-  //ストレート
-  select = straight( hd );
-  if ( select >= 0 ) { return select; }
-
-
-  //ペア  
-  select = pair_count( hd );
-  return select; //-1=交換を止める
-
-  return -1;
-}
 
 
 //--------------------------------------------------------------------
@@ -197,14 +161,9 @@ int straight( int hd[] )
 
           return i;
         }
-
       }
-
     }
-
   }
-
-
 
   //間が1つ空いているとき
   // ●○●●●
@@ -244,7 +203,40 @@ int straight( int hd[] )
   return -1;
 }
 
+int strategy( int hd[], int fd[], int cg, int tk, int ud[], int us) {
+  int myhd[HNUM];
+  int select = -1;
+  int point;
 
+  int i;
+
+
+  //高い役の時終了
+  point = poker_point( hd ); //手札の点数
+  if ( point == P9 ) { return -1; } //ロイヤルストレートフラッシュ
+  if ( point == P8 ) { return -1; } //ストレートフラッシュ
+  if ( point == P7 ) { return -1; } //フォーカード
+  if ( point == P5 ) { return -1; } //フラッシュ
+  if ( point == P6 ) { return -1; } //フルハウス
+  if ( point == P4 ) { return -1; } //ストレート
+
+  //フラッシュ     
+  select = flash_judge( hd );
+
+  if ( select != -1 ) {
+    return select;
+  }
+
+  //ストレート
+  select = straight( hd );
+  if ( select >= 0 ) { return select; }
+
+  //ペア  
+  select = pair_count( hd );
+  return select; //-1=交換を止める
+
+  return -1;
+}
 
 //====================================================================
 //  補助関数
