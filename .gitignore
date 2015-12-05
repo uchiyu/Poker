@@ -1,7 +1,6 @@
 #git ignore
-/log/*/*.*
-/usr/*.*
-!/usr/*/.gitignore
+/log/
+/usr/*/*.*
 !/usr/*/auto_exe.sh
 !/usr/*/Deck_01.ini
 !/usr/*/PokerOpe.c
