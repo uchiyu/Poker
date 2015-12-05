@@ -143,7 +143,7 @@ int selectCard( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
     exp = calcExp( hd, fd, cg, tk , ud, us, deck, i );
     // 現在より期待値が高ければselectを変更
     if ( exp > hightestExp ) { 
-      select = i; 
+      select = i;
       hightestExp = exp;
     }
   }
