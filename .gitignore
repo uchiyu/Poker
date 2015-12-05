@@ -1,4 +1,7 @@
 #git ignore
-/log/*
-/usr/s13t208_02/*.*
+/log/*/*.*
+/usr/*.*
+!/usr/s13t208_02/auto_exe.sh
+!/usr/s13t208_02/Deck_01.ini
 !/usr/s13t208_02/PokerOpe.c
+
