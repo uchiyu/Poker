@@ -1,3 +1,4 @@
-log/
-usr/s13t208_02/*.*
-!usr/s13t208_02/PokerOpe.c
+#git ignore
+/log/
+/usr/s13t208_02/*.*
+!/usr/s13t208_02/PokerOpe.c
