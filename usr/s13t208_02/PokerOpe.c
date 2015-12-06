@@ -86,7 +86,6 @@ void makeDeck( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[] 
   for ( i = 0; i < 5; i++) {
     deck[hd[i]] = -1;
   }
-
   for ( i = 0; i < cg; i++) {
     deck[fd[i]] = -1;
   }
@@ -110,23 +109,58 @@ int deckNum( int deck[] ) {
   return num;
 }
 
-void copyHd( int hd[], int nextHd[]) {
+void copyHd( int nextHd[], int hd[]) {
   int i;
   for ( i = 0; i < 5; i++) {
     nextHd[i] = hd[i];
   }
 }
 
-double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int changeCard ) {
+void copyDeck( int nextDeck[], int deck[]) {
+  int i;
+  for ( i = 0; i < CARDNUM; i++) {
+    nextDeck[i] = deck[i];
+  }
+}
+
+double calcExpSecond( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int changeCard ) {
   int i;
   int nextHd[5]; //次の手札
+  double exp = 0;
+  double tmp;
+
+  for ( i = 0; i < CARDNUM; i++) {
+    if ( deck[i] == 1 ) {
+      copyHd(nextHd, hd);
+      nextHd[changeCard] = i;
+      tmp = (double)deckNum(deck);
+      exp += (poker_point(nextHd)/tmp)/(tmp+1);
+    }
+  }
+  return exp;
+}
+
+double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int changeCard ) {
+  int i, k;
+  int nextHd[5]; //次の手札
+  int nextDeck[CARDNUM] = { 0 };
   double exp = 0;
 
   for ( i = 0; i < CARDNUM; i++) {
     if ( deck[i] == 1 ) {
-      copyHd(hd, nextHd);
+      copyHd(nextHd, hd);
       nextHd[changeCard] = i;
       exp += poker_point(nextHd)/(double)deckNum(deck);
+      
+      if ( tk < 1 || tk > 6) { continue; } // 一手目は傾斜が低いので二手先は無視
+      if ( cg > 4 ) { continue; } // 最後のチェンジの時は二手先は無視
+      // 二手先の期待値
+      copyDeck(nextDeck, deck);
+      nextDeck[i] = -1;
+      for ( k = 0; k < 5; k++) {
+        if ( k == changeCard ) { continue; }
+        exp += calcExpSecond( nextHd, fd, cg, tk , ud, us, nextDeck, k );
+      }
     }
   }
   return exp;
@@ -135,7 +169,7 @@ double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
 // 捨てる手札でもっとも期待値が高くなる札番号を返す
 int selectCard( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[] ) {
   int i;
-  double hightestExp = poker_point(hd); // 現在の手札の点数
+  double hightestExp = (double)poker_point(hd); // 現在の手札の点数
   double exp;
   int select = -1; //捨てる手札の番号
 
@@ -162,19 +196,8 @@ int bestExp( int hd[], int fd[], int cg, int tk, int ud[], int us ) {
 int strategy( int hd[], int fd[], int cg, int tk, int ud[], int us) {
   int myhd[HNUM];
   int select = -1;
-  int point;
-
-  int i;
 
   //高い役の時終了
-  point = poker_point( hd ); //手札の点数
-  if ( point == P9 ) { return -1; } //ロイヤルストレートフラッシュ
-  if ( point == P8 ) { return -1; } //ストレートフラッシュ
-  if ( point == P7 ) { return -1; } //フォーカード
-  if ( point == P5 ) { return -1; } //フラッシュ
-  if ( point == P6 ) { return -1; } //フルハウス
-  if ( point == P4 ) { return -1; } //ストレート
-
   select = bestExp( hd, fd, cg, tk, ud, us );
 
   return select;
