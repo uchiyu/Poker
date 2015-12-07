@@ -57,6 +57,8 @@
 
 #include "../../src/Poker.h"
 
+#define recursionLimit 0    // 先読み回数の指定 0が一手先
+
 //--------------------------------------------------------------------
 //  関数宣言
 //--------------------------------------------------------------------
@@ -157,9 +159,9 @@ double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
   int nextHd[HNUM]; //次の手札
   int nextDeck[CNUM] = { 0 };
   double exp = 0;
+        
+  if ( recursionCount > recursionLimit ) { return 0.0; } // 再帰回数の制限
       
-  if ( recursionCount > 1 ) { return 0.0; } // 再帰回数の制限
-
   for ( i = 0; i < CNUM; i++) {
     if ( deck[i] == 1 ) {
       copyHd(nextHd, hd);
@@ -167,12 +169,11 @@ double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
       copyDeck(nextDeck, deck);
       nextDeck[i] = -1;
       exp += poker_point(nextHd)/recursionExp( nextHd, nextDeck, recursionCount );
-
-      if ( tk < 1 || tk > 3  ) { continue; } // 配点が低い最初と最後のテイクは二手先は無視
-      if ( cg > 5 ) { continue; } // 最後のチェンジの時は二手先は無視(後行ってなので、みても意味が無い)
-      // 二手先の期待値
+      
+      //if ( tk < 1 || tk > 3  ) { continue; } // 配点が低い最初と最後のテイクは二手先は無視
+      if ( cg > 6 - recursionLimit ) { continue; } // 最後のチェンジの時は二手先は無視(後行ってなので、みても意味が無い)
+      // 二手先以降の期待値
       for ( k = 0; k < HNUM; k++) {
-        if ( k == changeCard ) { continue; }
         exp += calcExp( nextHd, fd, cg, tk , ud, us, nextDeck, k, recursionCount+1 );
       }
     }
@@ -196,7 +197,6 @@ int selectCard( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
       hightestExp = exp;
     }
   }
-  //if ( cg > 4 && hightestExp < 1.0 ) { return -1; }
   return select;
 }
 
