@@ -116,7 +116,7 @@ int poker_point_straight(int num[], int p);
 //  ゲーム戦略
 //--------------------------------------------------------------------
 
-int strategy(int hd[], int fd[], int cg, int tk, int ud[], int us);
+int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], int us);
 
 //--------------------------------------------------------------------
 //  ログディレクトリの作成

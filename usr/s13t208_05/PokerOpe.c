@@ -63,7 +63,11 @@
 #define TK4 1.5
 #define TK5 1.0
 
-#define recursionLimit 0    // 先読み回数の指定 0が一手先
+#define TRUE 1
+#define FALSE 0
+
+#define recursionlimit 1    // 先読み回数の指定 0が一手先
+//int recursionlimit = 1;    // 先読み回数の指定 0が一手先
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -132,6 +136,16 @@ int deckNum( int deck[] ) {
   return num;
 }
 
+double average( double array[], int num ) {
+  int sum = 0;
+  int i = 0;
+  
+  for ( i = 0; i < num; i++) {
+    sum += array[i];
+  }
+  return sum/(double)num;
+}
+
 void copyHd( int nextHd[], const int hd[]) {
   int i;
   for ( i = 0; i < HNUM; i++) {
@@ -154,7 +168,7 @@ void copyArray( int next[], const int current[], int num) {
 }
 
 double recursionExp ( int hd[], int deck[], int recursionCount ) {
-  double parameter = 1.0;
+  double parameter = 1;
   int decknum = 0;
   int i;
 
@@ -177,66 +191,77 @@ double pointConvert( double point, int tk ) {
   return rtPoint;
 }
 
-double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int changeCard, int recursionCount ) {
+double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int changeCard, int count ) {
   int i, k;
   int nextHd[HNUM]; //次の手札
   int nextDeck[CNUM] = { 0 };
   double exp = 0;
-  double currentExp = 0;
-  double point;
         
-  if ( recursionCount > recursionLimit ) { return 0.0; } // 再帰回数の制限
-      
   for ( i = 0; i < CNUM; i++) {
     if ( deck[i] == 1 ) {
       copyHd(nextHd, hd);
       nextHd[changeCard] = i;
       copyDeck(nextDeck, deck);
       nextDeck[i] = -1;
-      //point = pointConvert( (double)poker_point(nextHd), tk);
-      point = poker_point(nextHd);
-      currentExp = (double)point/recursionExp( nextHd, nextDeck, recursionCount );
-      exp += currentExp;
-  
-      //if ( tk != 2 ) { continue; }
-      //if ( tk < 1 || tk > 3  ) { continue; } // 配点が低い最初と最後のテイクは二手先は無視
-      if ( cg > 6 - recursionLimit ) { continue; } // チェンジ回数による再帰の制限
-      //if ( currentExp < 1 && recursionCount > 0 ) { return 0; }
-      // 二手先以降の期待値
-      for ( k = 0; k < HNUM; k++) {
-        exp += calcExp( nextHd, fd, cg, tk , ud, us, nextDeck, k, recursionCount+1 );
-      }
+      exp += poker_point(nextHd)/(double)recursionExp( nextHd, nextDeck, count );
     }
   }
   return exp;
 }
 
 // 捨てる手札でもっとも期待値が高くなる札番号を返す
-int selectCard( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[] ) {
+// 一度目の呼び出しでは、beforepointは0, selectnumは-1
+int bestExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[], int checkhdnum[], int count, double beforepoint, int selectnum ) {
   int i;
-  double hightestExp = (double)poker_point(hd); // 現在の手札の点数
-  double exp;
-  int select = -1; //捨てる手札の番号
-  int recursionCount = 0; //再帰回数
+  double bestpoint = (double)poker_point(hd); // 現在の手札の点数
+  int select = selectnum; //捨てる手札の番号
+  double valuehd[HNUM] = { 0.0 };
+  double averagenum = 0;
+  int nextHd[HNUM] = { 0 };
+  int nextDeck[CNUM] = { 0 };
 
+  if ( count == recursionlimit ) { return selectnum; }
+ 
   for ( i = 0; i < HNUM; i++ ) {
-    exp = calcExp( hd, fd, cg, tk , ud, us, deck, i, recursionCount );
-    // 現在より期待値が高ければselectを変更
-    if ( exp > hightestExp ) { 
+    // 評価値の作成 
+    valuehd[i] = calcExp( hd, fd, cg, tk , ud, us, deck, i, count );
+  
+
+    //printf("%3.0f ", valuehd[i]);
+    
+
+    // 期待値の最高点の更新
+    if ( bestpoint < valuehd[i] && beforepoint < valuehd[i] ) {
+      bestpoint = valuehd[i];
       select = i;
-      hightestExp = exp;
     }
   }
-  return select;
+
+
+  //printf(" == %-d\n", select);
+
+
+  //if ( count == 0 ) { return select; }
+  averagenum = average( valuehd, i );
+  for ( i = 0; i < HNUM; i++ ) {
+    if ( averagenum < valuehd[i] ) {
+      copyHd(nextHd, hd);
+      copyDeck(nextDeck, deck);
+      nextDeck[i] = -1;
+      bestExp( nextHd, fd, cg+1, tk , ud, us, nextDeck, hd, count+1, bestpoint, select );
+    }
+  }
+
+  //return select;
 }
 
 // 捨てると最も期待値が高くなるカードを返す
-int bestExp( int hd[], int fd[], int cg, int tk, int ud[], int us ) {
+int selectCard( int hd[], int fd[], int cg, int tk, int ud[], int us ) {
   int deck[CNUM] = { 0 };
+  int num = HNUM;
 
   makeDeck(hd, fd, cg, tk , ud, us, deck );
-
-  return selectCard( hd, fd, cg, tk , ud, us, deck );
+  return bestExp( hd, fd, cg, tk , ud, us, deck, hd, 0, 0, -1 );
 }
 
 int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], int us) {
@@ -250,9 +275,10 @@ int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], in
   copyArray( fdcopy, fd, cg );
   copyArray( udcopy, ud, us );
   if ( us >= 46 ) { return -1; }
-  select = bestExp( hdcopy, fdcopy, cg, tk, udcopy, us );
+  select = selectCard( hdcopy, fdcopy, cg, tk, udcopy, us );
   return select;
 }
+
 
 //====================================================================
 //  補助関数
