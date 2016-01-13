@@ -63,7 +63,7 @@
 #define TK4 1.5
 #define TK5 1.0
 
-#define recursionLimit 0    // 先読み回数の指定 0が一手先
+#define recursionLimit 1    // 先読み回数の指定 0が一手先
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -167,6 +167,19 @@ double recursionExp ( int hd[], int deck[], int recursionCount ) {
 
 double pointConvert( double point, int tk ) {
   double rtPoint = 0.0;
+  
+  switch ((int)point) {
+    /*
+    case P3: point = point * 2.9; break;
+    case P4: point = point * 2.4; break;
+    case P5: point = point * 2.1; break;
+    case P6: point = point * 3.9; break;
+    case P7: point = point * 2.1; break;
+    case P8: point = point * 2.7; break;
+    case P9: point = point * 3.9; break;
+    */
+  }
+
   switch (tk) {
     case 0: rtPoint = point * TK1; break;
     case 1: rtPoint = point * TK2; break;
@@ -198,8 +211,8 @@ double calcExp( int hd[], int fd[], int cg, int tk, int ud[], int us, int deck[]
       currentExp = (double)point/recursionExp( nextHd, nextDeck, recursionCount );
       exp += currentExp;
   
-      //if ( tk != 2 ) { continue; }
-      //if ( tk < 1 || tk > 3  ) { continue; } // 配点が低い最初と最後のテイクは二手先は無視
+      if ( tk != 2 ) { continue; }
+      if ( tk < 1 || tk > 3  ) { continue; } // 配点が低い最初と最後のテイクは二手先は無視
       if ( cg > 6 - recursionLimit ) { continue; } // チェンジ回数による再帰の制限
       //if ( currentExp < 1 && recursionCount > 0 ) { return 0; }
       // 二手先以降の期待値

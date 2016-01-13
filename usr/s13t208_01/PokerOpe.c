@@ -94,7 +94,6 @@ int flash_judge( int hd[] )
               return k;
             }
           }
-
         }
       }
     }
