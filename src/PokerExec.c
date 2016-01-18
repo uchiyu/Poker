@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
   double total;             // 総合得点
   double ave;               // 平均得点
   int k;                    // 反復変数
+  clock_t start, end;
 
   //----  コマンド引数の確認
   if ( argc < 5 ) {
@@ -111,12 +112,14 @@ int main(int argc, char *argv[])
   srand(time(NULL));
   puts("");
 
+  
+  start = clock();
   //----  トライ回数だけのゲームの反復
   total = 0.0;
   for ( k = 0; k < Trial; k++ ) {
     total += poker_exec(fp, point[k]);
   }
-
+  end = clock();
   //----  結果表の出力
   result_show(point);
 
@@ -124,7 +127,8 @@ int main(int argc, char *argv[])
   ave = (double) total / Trial;
   my_printf(Result_Log, "\n");
   my_printf_d(Result_Log, "平均得点 :  %lf\n", ave);
-
+  
+  printf("経過時間:  %d:%d\n", ((end-start)/1000)/60, ((end-start)/1000)%60);
   //----  ファイルのクローズ
   fclose(fp);
   fclose(Game_Log);

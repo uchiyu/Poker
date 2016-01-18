@@ -100,10 +100,10 @@ int makedeck( int hd[], int ud[], int us, int deck[]) {
   return CNUM - count;
 }
 
-double calcexp( int hd[], int cg, int tk, int changecard, int deck[], int deckcard, int recursioncount ) {
+int calcexp( int hd[], int cg, int tk, int changecard, int deck[], int decknum, int recursioncount ) {
   int nexthd[HNUM];
   int nextdeck[CNUM];
-  double exp = 0;
+  int exp = 0;
   int i, k;
 
   for ( i = 0; i < CNUM; i++) {
@@ -112,35 +112,35 @@ double calcexp( int hd[], int cg, int tk, int changecard, int deck[], int deckca
       nexthd[changecard] = i;
       arr_copy( nextdeck, deck, CNUM );
       nextdeck[i] = -1;
-      exp += poker_point(nexthd)/(double)deckcard;
+      exp += poker_point(nexthd)*decknum;
 
       //if ( tk < 1 || tk > 3 ) { continue; }
       if ( cg > 7 - LIMIT ) { continue; }
       if ( recursioncount >= LIMIT ) { continue; }
       for ( k = 0; k < HNUM; k++ ) {
-          exp += calcexp( nexthd, cg+1, tk, k, nextdeck, deckcard*(deckcard-1), recursioncount+1 );
+          exp += calcexp( nexthd, cg+1, tk, k, nextdeck, 1, recursioncount+1 );
       }
     }
   }
   return exp;
 }
 
-int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int deckcard ) {
-  double hightexp = (double)poker_point(hd);
-  double exp;
+int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
+  int hightexp = poker_point(hd)*decknum;
+  int exp;
   int select = -1;
   int recursioncount = 1;
   int i;
 
   for ( i = 0; i < HNUM; i++ ) {
-    exp = calcexp( hd, cg, tk, i, deck, deckcard, recursioncount);
-    //printf("%f ", exp);
+    exp = calcexp( hd, cg, tk, i, deck, decknum, recursioncount);
+    //printf("%d ", exp);
     if ( exp > hightexp ) {
       hightexp = exp;
       select = i;
     }
   }
-  //printf("\n%d\n", select);
+  //puts("");
   return select;
 }
 

@@ -57,7 +57,7 @@
 
 #include "Poker.h"
 
-#define LIMIT 3 //1で1手先まで
+#define LIMIT 2 //1で1手先まで
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -83,6 +83,20 @@ ud : 捨札配列(過去のテイクも含めた全ての捨札)
 us : 捨札数
 
 --------------------------------------------------------------------*/
+int pointconvert( int point ) {
+  int result = 0;
+  
+  switch (point) {
+    //case P3: point = point * 2.2; break;
+    case P4: result = point * 2.2; break;
+    case P5: result = point * 2.0; break;
+    //case P6: point = point * 2.2; break;
+    //case P7: point = point * 2.2; break;
+    //case P8: point = point * 2.2; break;
+    //case P9: point = point * 2.2; break;
+  }
+  return result;
+}
 
 int makedeck( int hd[], int ud[], int us, int deck[]) {
   int i;
@@ -100,47 +114,70 @@ int makedeck( int hd[], int ud[], int us, int deck[]) {
   return CNUM - count;
 }
 
-double calcexp( int hd[], int cg, int tk, int changecard, int deck[], int deckcard, int recursioncount ) {
+void calcexp( int hd[], int cg, int tk, int pointhd[], int pointnum, int deck[], int decknum, int recursioncount, int starthd ) {
   int nexthd[HNUM];
   int nextdeck[CNUM];
-  double exp = 0;
-  int i, k;
+  int point = 0;
+  int i, j;
 
-  for ( i = 0; i < CNUM; i++) {
-    if ( deck[i] == 0 ) {
-      arr_copy( nexthd, hd, HNUM );
-      nexthd[changecard] = i;
-      arr_copy( nextdeck, deck, CNUM );
-      nextdeck[i] = -1;
-      exp += poker_point(nexthd)/(double)deckcard;
+  for ( i = starthd; i < HNUM; i++) {
+    if ( pointnum != -1 ) {
+      //printf("%d, %d, %d\n", pointnum, i, decknum);
+    }
+    for ( j = 0; j < CNUM; j++) {
+      if ( deck[j] == 0 ) {
+        arr_copy( nexthd, hd, HNUM );
+        nexthd[i] = j;
+        arr_copy( nextdeck, deck, CNUM );
+        nextdeck[j] = -1;
 
-      //if ( tk < 1 || tk > 3 ) { continue; }
-      if ( cg > 7 - LIMIT ) { continue; }
-      if ( recursioncount >= LIMIT ) { continue; }
-      for ( k = 0; k < HNUM; k++ ) {
-          exp += calcexp( nexthd, cg+1, tk, k, nextdeck, deckcard*(deckcard-1), recursioncount+1 );
+        if ( pointnum == -1 ) {
+          // 一手目の期待値の加算
+          //pointhd[i] += poker_point(nexthd)*(decknum*(LIMIT+1-recursioncount));
+          pointhd[i] += poker_point(nexthd)*decknum;
+          //pointhd[i] += pointconvert(poker_point(nexthd))*decknum;
+        } else {
+          // 二手目以降の期待値の加算
+          point = poker_point(nexthd);
+          //point = pointconvert(poker_point(nexthd));
+
+          pointhd[pointnum] += point;
+
+          if ( pointnum < i ) {
+            pointhd[i] += point;
+          }
+        }
+
+        //if ( tk < 1 || tk > 3 ) { continue; }
+        if ( cg > 7 - LIMIT ) { continue; }
+        if ( recursioncount >= LIMIT ) { continue; }
+
+        if ( pointnum == -1 ) {
+          calcexp( nexthd, cg+1, tk, pointhd, i, nextdeck, decknum-1, recursioncount+1, i );
+        } else {
+          calcexp( nexthd, cg+1, tk, pointhd, pointnum, nextdeck, decknum-1, recursioncount+1, i );
+        }
+
       }
     }
   }
-  return exp;
 }
 
-int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int deckcard ) {
-  double hightexp = (double)poker_point(hd);
-  double exp;
+int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
+  int hightexp = poker_point(hd)*decknum;
   int select = -1;
   int recursioncount = 1;
+  int pointhd[HNUM] = { 0 }; // 期待値を格納
   int i;
 
-  for ( i = 0; i < HNUM; i++ ) {
-    exp = calcexp( hd, cg, tk, i, deck, deckcard, recursioncount);
-    //printf("%f ", exp);
-    if ( exp > hightexp ) {
-      hightexp = exp;
+  calcexp( hd, cg, tk, pointhd, -1, deck, decknum, recursioncount, 0);
+
+  for ( i = 0; i < HNUM; i++) {
+    if ( pointhd[i] > hightexp ) {
+      hightexp = pointhd[i];
       select = i;
     }
   }
-  //printf("\n%d\n", select);
   return select;
 }
 
@@ -154,9 +191,8 @@ int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], in
   int decknum = CNUM;
   int k;
 
-  if ( us >= 46 ) { return -1; }
-  arr_copy( hdcopy, hd, HNUM);
   // 最初から高い点なら手札を変えずに終了
+  arr_copy( hdcopy, hd, HNUM);
   currentpoint = poker_point(hdcopy);
   if ( currentpoint >= P6 ) { return -1; }
 
