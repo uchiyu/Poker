@@ -59,6 +59,9 @@
 #include "Poker.h"
 
 #define LIMIT 2 //1で1手先まで
+//#define LASTLIMIT 3
+int LASTLIMIT = 0;
+int MAX;
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -119,6 +122,16 @@ int pointconvert( int point ) {
     case P7: result = point * 9520; break;
     case P8: result = point * 1720; break;
     case P9: result = point * 2035; break;
+
+    //case P1: result = point << 9; break;
+    //case P2: result = point << 6; break;
+    //case P3: result = point << 9; break;
+    //case P4: result = point << 12; break;
+    //case P5: result = point << 11; break;
+    //case P6: result = point << 10; break;
+    //case P7: result = point << 13; break;
+    //case P8: result = point << 11; break;
+    //case P9: result = point << 11; break;
   }
   return result;
 }
@@ -147,7 +160,6 @@ void calcexp( int hd[], int cg, int tk, int pointhd[], int pointnum, int deck[],
 
   for ( i = starthd; i < HNUM; i++) {
     if ( pointnum != -1 ) {
-      //printf("%d, %d, %d\n", pointnum, i, decknum);
     }
     for ( j = 0; j < CNUM; j++) {
       if ( deck[j] == 0 ) {
@@ -165,14 +177,17 @@ void calcexp( int hd[], int cg, int tk, int pointhd[], int pointnum, int deck[],
           // 二手目以降の期待値の加算
           //point = poker_point(nexthd);
           point = pointconvert(poker_point(nexthd));
+          
+          //if ( tk == 2 ) {
+            //point += preflash( hd, pointhd, pointnum, deck, decknum );
+          //}
+          
           pointhd[pointnum] += point;
 
           if ( pointnum < i ) {
             pointhd[i] += point;
           }
-          //if ( tk == 2 && cg < 4 ) {
-          //  pointhd[i] += preflash( hd, pointhd, pointnum, deck, decknum );
-          //}
+          
         }
 
         //if ( tk < 1 || tk > 3 ) { continue; }
@@ -210,6 +225,52 @@ int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int deck
   return select;
 }
 
+void calcexp_last( int hd[], int cg, int tk, int changecard, int deck[], int recursioncount ) {
+  int nexthd[HNUM];
+  int nextdeck[CNUM];
+  int exp;
+  int i, k;
+
+  for ( i = 0; i < CNUM; i++) {
+    if ( deck[i] == 0 ) {
+      arr_copy( nexthd, hd, HNUM );
+      nexthd[changecard] = i;
+      arr_copy( nextdeck, deck, CNUM );
+      nextdeck[i] = -1;
+      exp = poker_point(nexthd);
+      if ( exp > MAX ) { MAX = exp; }
+
+      //if ( tk < 1 || tk > 3 ) { continue; }
+      if ( cg > 7 - LASTLIMIT ) { continue; }
+      if ( recursioncount >= LASTLIMIT ) { continue; }
+      for ( k = 0; k < HNUM; k++ ) {
+          calcexp_last( nexthd, cg+1, tk, k, nextdeck, recursioncount+1 );
+      }
+    }
+  }
+}
+
+int selectcard_last( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
+  int hightexp = poker_point(hd);
+  int exp;
+  int select = -1;
+  int recursioncount = 1;
+  int i;
+
+  for ( i = 0; i < HNUM; i++ ) {
+    MAX = 0;
+    calcexp_last( hd, cg, tk, i, deck, recursioncount);
+    if ( hightexp < MAX ) {
+      hightexp = MAX;
+      select = i;
+    }
+  }
+  MAX = hightexp;
+
+  //puts("");
+  return select;
+}
+
 int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], int us) {
   int myhd[HNUM];
   int select = -1;
@@ -219,17 +280,27 @@ int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], in
   int deck[CNUM] = { 0 };
   int decknum = CNUM;
   int k;
+  int lastchangehd = 0;
 
   // 最初から高い点なら手札を変えずに終了
   arr_copy( hdcopy, hd, HNUM);
   currentpoint = poker_point(hdcopy);
-  //if ( currentpoint >= P6 && tk < 4  ) { return -1; } // tk4だけ終了せずに最後まで先読み
-  if ( currentpoint >= P6 ) { return -1; }
+  //if ( currentpoint >= P6 ) { return -1; }
 
   arr_copy( udcopy, ud, us );
   decknum = makedeck( hdcopy, udcopy, us, deck );
-  select = selectcard( hdcopy, cg, tk, udcopy, us, deck, decknum );
-  return select;
+  if ( currentpoint >= P6 ) { return -1; }
+  //if ( currentpoint >= P6 && tk != 4 ) { return -1; } // tk4だけ終了せずに最後まで先読み
+  //if ( tk == 4 && decknum <= 6 - cg ) {  LASTLIMIT = decknum; return selectcard_last( hdcopy, cg, tk, udcopy, us, deck, decknum ); }
+  if ( tk == 4 && decknum <= 6 - cg ) {
+    LASTLIMIT = decknum;
+    lastchangehd = selectcard_last( hdcopy, cg, tk, udcopy, us, deck, decknum );
+    //if ( MAX > currentpoint ) { return lastchangehd; } else { return -1; }
+    return lastchangehd;
+  }
+  
+  return selectcard( hdcopy, cg, tk, udcopy, us, deck, decknum );
+  
 }
 
 //====================================================================

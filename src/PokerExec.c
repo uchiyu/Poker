@@ -231,6 +231,7 @@ int poker_take(const int deck[], int tk, int used[], int *us)
 
   //----  テイクの後処理
   take_p = poker_point(hand);                 // テイク得点
+  // if ( tk == 4 ) { printf("%d\n", take_p); } デバック出力
 
   for ( k = 0; k < HNUM; k++ ) {
     used[*us] = hand[k];                      // 手札を捨札配列に追加
