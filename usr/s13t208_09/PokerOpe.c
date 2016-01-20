@@ -289,14 +289,13 @@ int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], in
 
   arr_copy( udcopy, ud, us );
   decknum = makedeck( hdcopy, udcopy, us, deck );
-  if ( currentpoint >= P6 ) { return -1; }
-  //if ( currentpoint >= P6 && tk != 4 ) { return -1; } // tk4だけ終了せずに最後まで先読み
+  //if ( currentpoint >= P6 ) { return -1; }
+  if ( currentpoint >= P6 && tk != 4 ) { return -1; } // tk4だけ終了せずに最後まで先読み
   //if ( tk == 4 && decknum <= 6 - cg ) {  LASTLIMIT = decknum; return selectcard_last( hdcopy, cg, tk, udcopy, us, deck, decknum ); }
   if ( tk == 4 && decknum <= 6 - cg ) {
     LASTLIMIT = decknum;
     lastchangehd = selectcard_last( hdcopy, cg, tk, udcopy, us, deck, decknum );
-    //if ( MAX > currentpoint ) { return lastchangehd; } else { return -1; }
-    return lastchangehd;
+    if ( MAX > currentpoint ) { return lastchangehd; } else { return -1; }
   }
   
   return selectcard( hdcopy, cg, tk, udcopy, us, deck, decknum );
