@@ -3,5 +3,7 @@
 /usr/*/*.*
 !/usr/*/auto_exe.sh
 !/usr/*/Deck_01.ini
+!/usr/*/Deck_01.txt
 !/usr/*/PokerOpe.c
+!/usr/ver.txt
 
