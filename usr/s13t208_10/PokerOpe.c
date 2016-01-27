@@ -58,10 +58,10 @@
 
 #include "Poker.h"
 
-#define LIMIT 2 //1で1手先まで
-#define LASTLIMIT 3
-//int LASTLIMIT = 0;
-//int MAX;
+#define RECURSION_LIMIT 2 //1で1手先まで
+#define LAST_RECURSION_LIMIT 3 //1で1手先まで
+//int LAST_RECURSION_LIMIT = 0; //テイク5の再帰回数
+int MAX_EXP;
 
 //--------------------------------------------------------------------
 //  関数宣言
@@ -87,135 +87,89 @@ ud : 捨札配列(過去のテイクも含めた全ての捨札)
 us : 捨札数
 
 --------------------------------------------------------------------*/
-int preflash( int hd[], int pointhd[], int pointnum, int deck[], int decknum ) {
-  int i;
-  int suit[4] = { 0 };
-  int flashsuit; // フラッシュになる柄
-  int flashcardnum; // くるとフラッシュになるカードの枚数
-  bool preflash = false;
-  for ( i = 0; i < HNUM; i++) {
-    if ( ++suit[hd[i]/13] == 4 ) { 
-      preflash = true;
-      flashsuit = hd[i]/13;
-    }
-  }
-  
-  for ( i = 0; i < CNUM; i++) {
-    if ( deck[i] == 0 && i/13 == flashsuit ) {
-      flashcardnum++;
-    }
-  }
-
-  return (int)(P5*(flashcardnum/(double)decknum));
-}
-
-int pointconvert( int point ) {
-  int result = 0;
+int point_convert( int point ) {
+  int convertpoint = 0;
   
   switch (point) {
-    case P1: result = point * 681; break;
-    case P2: result = point * 57; break;
-    case P3: result = point * 581; break;
-    case P4: result = point * 3973; break;
-    case P5: result = point * 2217; break;
-    case P6: result = point * 802; break;
-    case P7: result = point * 9520; break;
-    case P8: result = point * 1720; break;
-    case P9: result = point * 2035; break;
-
-    //case P1: result = point << 9; break;
-    //case P2: result = point << 6; break;
-    //case P3: result = point << 9; break;
-    //case P4: result = point << 12; break;
-    //case P5: result = point << 11; break;
-    //case P6: result = point << 10; break;
-    //case P7: result = point << 13; break;
-    //case P8: result = point << 11; break;
-    //case P9: result = point << 11; break;
+    case P1: convertpoint = point * 681; break;
+    case P2: convertpoint = point * 57; break;
+    case P3: convertpoint = point * 581; break;
+    case P4: convertpoint = point * 3973; break;
+    case P5: convertpoint = point * 2217; break;
+    case P6: convertpoint = point * 802; break;
+    case P7: convertpoint = point * 9520; break;
+    case P8: convertpoint = point * 1720; break;
+    case P9: convertpoint = point * 2035; break;
   }
-  return result;
+  return convertpoint;
 }
 
-int makedeck( int hd[], int ud[], int us, int deck[]) {
+int make_deck( int hd[], int ud[], int us, int deck[]) {
   int i;
-  int count = 0;
+  int decknum = 0;
   // 手札の収納
   for ( i = 0; i < HNUM; i++ ) {
     deck[hd[i]] = -1;
-    count++;
+    decknum++;
   }
   // 捨て札の収納
   for ( i = 0; i < us; i++ ) {
     deck[ud[i]] = -1;
-    count++;
+    decknum++;
   }
-  return CNUM - count;
+  return CNUM - decknum;
 }
 
-void calcexp( int hd[], int cg, int tk, int pointhd[], int pointnum, int deck[], int decknum, int recursioncount, int starthd ) {
+void calc_exp( int hd[], int cg, int tk, int pointhd[], int pointnum, int deck[], int decknum, int recursioncount, int starthd ) {
   int nexthd[HNUM];
   int nextdeck[CNUM];
   int point = 0;
   int i, j;
 
   for ( i = starthd; i < HNUM; i++) {
-    if ( pointnum != -1 ) {
-      //printf("%d, %d, %d\n", pointnum, i, decknum);
-    }
     for ( j = 0; j < CNUM; j++) {
+      // 山札にカードがあれば
       if ( deck[j] == 0 ) {
+        // 手札とデッキの複製
         arr_copy( nexthd, hd, HNUM );
         nexthd[i] = j;
         arr_copy( nextdeck, deck, CNUM );
         nextdeck[j] = -1;
 
-        if ( pointnum == -1 ) {
+        if ( recursioncount == 1 ) {
           // 一手目の期待値の加算
-          //pointhd[i] += poker_point(nexthd)*(decknum*(LIMIT+1-recursioncount));
-          //pointhd[i] += poker_point(nexthd)*decknum;
-          pointhd[i] += pointconvert(poker_point(nexthd))*decknum;
+          pointhd[i] += point_convert(poker_point(nexthd))*decknum;
         } else {
-          // 二手目以降の期待値の加算
-          //point = poker_point(nexthd);
-          point = pointconvert(poker_point(nexthd));
-          
-          //if ( tk == 2 ) {
-          //  point += preflash( hd, pointhd, pointnum, deck, decknum );
-          //}
-          
+          // 二手目の期待値の加算
+          point = point_convert(poker_point(nexthd));
           pointhd[pointnum] += point;
-
           if ( pointnum < i ) {
             pointhd[i] += point;
           }
-          
         }
 
-        //if ( tk < 1 || tk > 3 ) { continue; }
-        if ( cg > 7 - LIMIT ) { continue; }
-        if ( recursioncount >= LIMIT ) { continue; }
+        if ( cg > 7 - RECURSION_LIMIT ) { continue; }
+        if ( recursioncount >= RECURSION_LIMIT ) { continue; }
 
         // 再帰呼び出し
         if ( pointnum == -1 ) {
-          calcexp( nexthd, cg+1, tk, pointhd, i, nextdeck, decknum-1, recursioncount+1, i );
+          calc_exp( nexthd, cg+1, tk, pointhd, i, nextdeck, decknum-1, recursioncount+1, i );
         } else {
-          calcexp( nexthd, cg+1, tk, pointhd, pointnum, nextdeck, decknum-1, recursioncount+1, i );
+          calc_exp( nexthd, cg+1, tk, pointhd, pointnum, nextdeck, decknum-1, recursioncount+1, i );
         }
-
       }
     }
   }
 }
 
-int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
+int select_card( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
   int hightexp = ( decknum > 1 ) ? poker_point(hd)*decknum*(decknum-1) : poker_point(hd)*decknum;
-  //int hightexp = poker_point(hd)*decknum;
   int select = -1;
   int recursioncount = 1;
   int pointhd[HNUM] = { 0 }; // 期待値を格納
   int i;
 
-  calcexp( hd, cg, tk, pointhd, -1, deck, decknum, recursioncount, 0);
+  calc_exp( hd, cg, tk, pointhd, -1, deck, decknum, recursioncount, 0);
 
   for ( i = 0; i < HNUM; i++) {
     if ( pointhd[i] > hightexp ) {
@@ -226,10 +180,10 @@ int selectcard( int hd[], int cg, int tk, int ud[], int us, int deck[], int deck
   return select;
 }
 
-int calcexp_last( int hd[], int cg, int tk, int changecard, int deck[], int decknum, int recursioncount ) {
+void seek_hightest( int hd[], int cg, int tk, int changecard, int deck[], int recursioncount ) {
   int nexthd[HNUM];
   int nextdeck[CNUM];
-  int exp = 0;
+  int currentpoint;
   int i, k;
 
   for ( i = 0; i < CNUM; i++) {
@@ -238,33 +192,35 @@ int calcexp_last( int hd[], int cg, int tk, int changecard, int deck[], int deck
       nexthd[changecard] = i;
       arr_copy( nextdeck, deck, CNUM );
       nextdeck[i] = -1;
-      exp += poker_point(nexthd)*decknum;
+      currentpoint = poker_point(nexthd);
+      if ( currentpoint > MAX_EXP ) { MAX_EXP = currentpoint; }
 
-      //if ( tk < 1 || tk > 3 ) { continue; }
-      if ( cg > 7 - LASTLIMIT ) { continue; }
-      if ( recursioncount >= LASTLIMIT ) { continue; }
+      if ( cg > 7 - LAST_RECURSION_LIMIT ) { continue; }
+      if ( recursioncount >= LAST_RECURSION_LIMIT ) { continue; }
       for ( k = 0; k < HNUM; k++ ) {
-          exp += calcexp_last( nexthd, cg+1, tk, k, nextdeck, 1, recursioncount+1 );
+          seek_hightest( nexthd, cg+1, tk, k, nextdeck, recursioncount+1 );
       }
     }
   }
-  return exp;
 }
 
-int selectcard_last( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
-  int hightexp = poker_point(hd)*decknum;
+int select_card_last( int hd[], int cg, int tk, int ud[], int us, int deck[], int decknum ) {
+  int hightexp = poker_point(hd);
   int exp;
   int select = -1;
   int recursioncount = 1;
   int i;
 
   for ( i = 0; i < HNUM; i++ ) {
-    exp = calcexp_last( hd, cg, tk, i, deck, decknum, recursioncount);
-    if ( exp > hightexp ) {
-      hightexp = exp;
+    MAX_EXP = 0;
+    seek_hightest( hd, cg, tk, i, deck, recursioncount);
+    if ( hightexp < MAX_EXP ) {
+      hightexp = MAX_EXP;
       select = i;
     }
   }
+  MAX_EXP = hightexp;
+
   return select;
 }
 
@@ -277,17 +233,22 @@ int strategy( const int hd[], const int fd[], int cg, int tk, const int ud[], in
   int deck[CNUM] = { 0 };
   int decknum = CNUM;
   int k;
+  int lastchangehd = 0;
 
   // 最初から高い点なら手札を変えずに終了
   arr_copy( hdcopy, hd, HNUM);
   currentpoint = poker_point(hdcopy);
-  //if ( currentpoint >= P6 && tk < 4  ) { return -1; } // tk4だけ終了せずに最後まで先読み
   if ( currentpoint >= P6 ) { return -1; }
 
   arr_copy( udcopy, ud, us );
-  decknum = makedeck( hdcopy, udcopy, us, deck );
-  //if ( tk == 4 ) { return selectcard_last( hdcopy, cg, tk, udcopy, us, deck, decknum ); }
-  return selectcard( hdcopy, cg, tk, udcopy, us, deck, decknum );
+  decknum = make_deck( hdcopy, udcopy, us, deck );
+  if ( tk == 4 && decknum <= 7 - cg ) {
+    //LAST_RECURSION_LIMIT = decknum;
+    select = select_card_last( hdcopy, cg, tk, udcopy, us, deck, decknum );
+  } else {
+    select = select_card( hdcopy, cg, tk, udcopy, us, deck, decknum );
+  }
+  return select;
   
 }
 
